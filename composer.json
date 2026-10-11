@@ -1,0 +1,11 @@
+{
+    "description": "Friendlier schedules with countdowns, conditions, waits and Discord messages.",
+    "autoload": {
+        "psr-4": {
+            "Automations\\": "src/"
+        }
+    },
+    "config": {
+        "autoloader-suffix": "AutomationsExtension"
+    }
+}

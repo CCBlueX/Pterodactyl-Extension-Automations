@@ -1,0 +1,43 @@
+{
+    "$schema": "./node_modules/@pterodactyl/sdk/manifest.schema.json",
+    "id": "automations",
+    "name": "Automations",
+    "version": "1.0.0",
+    "requires": {
+        "panel": "^2.0.0-dev",
+        "sdk": "^2.0.0-beta.4",
+        "php": "^8.3"
+    },
+    "description": "Friendlier schedules with countdowns, conditions, waits and Discord messages.",
+    "author": "Izuna Seikatsu",
+    "provider": "Automations\\AutomationsProvider",
+    "ui": {
+        "entry": "dist/client.js",
+        "mode": "native",
+        "prefix": "auto",
+        "screens": [
+            {
+                "id": "automations",
+                "area": "server",
+                "path": "automations",
+                "nav": {
+                    "label": "Automations",
+                    "icon": "workflow",
+                    "order": 35
+                },
+                "permission": [
+                    "ext.automations.read"
+                ]
+            },
+            {
+                "id": "editor",
+                "area": "server",
+                "path": "automations/$automationId",
+                "permission": [
+                    "ext.automations.manage"
+                ]
+            }
+        ]
+    },
+    "icon": "workflow"
+}
