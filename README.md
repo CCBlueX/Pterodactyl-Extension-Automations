@@ -25,6 +25,8 @@ Schedules that do more: restart with a countdown, only when nobody is online, th
 
 ![Editor](docs/screenshots/editor.png)
 
+![Run history](docs/screenshots/history.png)
+
 ## Settings
 
 | Setting | Default | What it does |

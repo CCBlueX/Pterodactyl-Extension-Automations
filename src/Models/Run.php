@@ -89,7 +89,7 @@ final class Run extends Model
             'cursor' => $outcome->cursor,
             'log' => array_slice([...$this->log ?? [], ...$outcome->log], -self::LOG_LIMIT),
             'message' => $outcome->message === null ? null : mb_substr($outcome->message, 0, 500),
-            'wake_at' => $running ? CarbonImmutable::createFromTimestamp((int) $outcome->wakeAt) : null,
+            'wake_at' => $running ? CarbonImmutable::createFromTimestamp((int) $outcome->wakeAt, config('app.timezone')) : null,
             'finished_at' => $running ? null : CarbonImmutable::now(),
         ]);
     }

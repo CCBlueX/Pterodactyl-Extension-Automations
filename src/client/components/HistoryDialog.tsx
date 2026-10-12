@@ -61,8 +61,8 @@ export default function HistoryDialog({ server, automation, onClose }: Props) {
                             {open === run.id && (
                                 <ol className='auto:mt-2 auto:grid auto:gap-1 auto:border-t auto:border-border auto:pt-2'>
                                     {run.log.map((entry, index) => (
-                                        <li key={index} className='auto:grid auto:grid-cols-[4.5rem_minmax(0,1fr)] auto:gap-2 auto:text-xs'>
-                                            <span className='auto:font-mono auto:text-muted-foreground'>{new Date(entry.at).toLocaleTimeString()}</span>
+                                        <li key={index} className='auto:grid auto:grid-cols-[auto_minmax(0,1fr)] auto:gap-2 auto:text-xs'>
+                                            <span className='auto:whitespace-nowrap auto:font-mono auto:text-muted-foreground'>{new Date(entry.at).toLocaleTimeString()}</span>
                                             <span className='auto:min-w-0'>
                                                 <span className='auto:mr-2 auto:inline-block'>
                                                     <StatusPill status={entry.result} />

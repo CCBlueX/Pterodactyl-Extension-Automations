@@ -57,9 +57,10 @@ final class Automation extends Model
         return $this->hasOne(Run::class)->latestOfMany();
     }
 
+    /** In the panel's time zone, because datetime columns store wall-clock time. */
     public function nextRun(?DateTimeInterface $after = null): ?CarbonImmutable
     {
-        return $this->enabled ? CarbonImmutable::instance(Trigger::fromArray($this->trigger)->next($after ?? CarbonImmutable::now())) : null;
+        return $this->enabled ? CarbonImmutable::instance(Trigger::fromArray($this->trigger)->next($after ?? CarbonImmutable::now()))->setTimezone(config('app.timezone')) : null;
     }
 
     /** @return array<string, mixed> */
