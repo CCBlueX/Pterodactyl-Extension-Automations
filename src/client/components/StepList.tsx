@@ -1,6 +1,7 @@
 import { Button, NamedIcon } from '@pterodactyl/sdk';
 import type { Step } from '../api';
 import { MAX_DEPTH, STEP_TYPES, move, newStep, removeAt, replaceAt, stepType } from '../lib/steps';
+import AddStepMenu from './AddStepMenu';
 import ConditionFields from './ConditionFields';
 import StepFields from './StepFields';
 
@@ -71,16 +72,9 @@ export default function StepList({ steps, onChange, players, parent = '', depth 
                     })}
                 </ol>
             )}
-            <div className='auto:flex auto:flex-wrap auto:items-center auto:gap-1.5'>
-                <span className='auto:mr-1 auto:text-xs auto:text-muted-foreground'>{steps.length === 0 && parent ? 'Nothing yet. Add' : 'Add'}</span>
-                {STEP_TYPES.filter((entry) => entry.type !== 'if' || depth < MAX_DEPTH).map((entry) => (
-                    <Button.Text key={entry.type} size='xsmall' aria-label={parent ? `Add ${entry.label} to ${parent}` : `Add ${entry.label}`} onClick={() => onChange([...steps, newStep(entry.type)])}>
-                        <span className='auto:inline-flex auto:items-center auto:gap-1.5'>
-                            <NamedIcon name={entry.icon} className='auto:h-3.5 auto:w-3.5' />
-                            {entry.label}
-                        </span>
-                    </Button.Text>
-                ))}
+            <div className='auto:flex auto:flex-wrap auto:items-center auto:gap-2'>
+                {steps.length === 0 && parent && <span className='auto:text-xs auto:text-muted-foreground'>Nothing yet.</span>}
+                <AddStepMenu types={STEP_TYPES.map((entry) => entry.type).filter((type) => type !== 'if' || depth < MAX_DEPTH)} target={parent || undefined} onAdd={(type) => onChange([...steps, newStep(type)])} />
             </div>
         </div>
     );

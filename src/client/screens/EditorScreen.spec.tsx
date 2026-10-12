@@ -56,6 +56,13 @@ function renderEditor(automationId: string, eggFeatures: string[] = []) {
     return server.attributes.identifier;
 }
 
+/** Opens the "Add step" menu of the list at `target` (the top level by default) and picks a step type. */
+async function addStep(label: string, target?: string) {
+    fireEvent.click(screen.getByRole('button', { name: target ? `Add step to ${target}` : 'Add step' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: new RegExp(`^${label}`) }));
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+}
+
 test('builds a restart with a countdown and a player check, then saves the tree', async () => {
     const id = renderEditor('new', ['eula']);
 
@@ -63,15 +70,15 @@ test('builds a restart with a countdown and a player check, then saves the tree'
     const create = screen.getByRole('button', { name: 'Create automation' }) as HTMLButtonElement;
     expect(create.disabled).toBe(true);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add If / else' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add Countdown' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add Power action to 1 › then' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add Notify to 1 › otherwise' }));
+    await addStep('If / else');
+    await addStep('Countdown');
+    await addStep('Power action', '1 › then');
+    await addStep('Notify', '1 › otherwise');
 
     // The countdown goes first, which moves the if/else to position 2.
     fireEvent.click(screen.getByRole('button', { name: 'Move step 2 up' }));
     expect((screen.getByRole('button', { name: 'Move step 1 up' }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByRole('button', { name: 'Add Send command to 2 › then' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add step to 2 › then' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: '30 minutes before' }));
     fireEvent.click(screen.getByRole('button', { name: '10 seconds before' }));
@@ -103,7 +110,7 @@ test('builds a restart with a countdown and a player check, then saves the tree'
 
 test('offers player counts only for Minecraft eggs', async () => {
     const options = async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Add If / else' }));
+        await addStep('If / else');
         const input = screen.getByLabelText('If');
         input.focus();
         fireEvent.keyDown(input, { key: 'ArrowDown' });
@@ -120,6 +127,47 @@ test('offers player counts only for Minecraft eggs', async () => {
     renderEditor('new', []);
     await screen.findByLabelText('Name');
     expect(await options()).not.toContain('Players online');
+});
+
+test('offers every step type with a description from one menu, without if/else at the deepest level', async () => {
+    renderEditor('new');
+    await screen.findByLabelText('Name');
+
+    expect(screen.getAllByRole('button', { name: /^Add step/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
+    const items = await screen.findAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual([
+        'Send commandRuns a console command.',
+        'Power actionStarts, stops, restarts or kills the server.',
+        'Create backupStarts a backup and can wait for it.',
+        'WaitPauses for a set time.',
+        'Wait for stateWaits until the server is running or offline.',
+        'CountdownAnnounces the time left, then goes on.',
+        'If / elseRuns other steps based on a condition.',
+        'NotifySends a Discord or webhook message.',
+    ]);
+    fireEvent.click(items[6]);
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+
+    await addStep('If / else', '1 › then');
+    fireEvent.click(screen.getByRole('button', { name: 'Add step to 1 › then 1 › then' }));
+    const nested = (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
+    expect(nested).toHaveLength(7);
+    expect(nested.some((text) => text?.startsWith('If / else'))).toBe(false);
+});
+
+test('opens the step menu from the keyboard', async () => {
+    renderEditor('new');
+    await screen.findByLabelText('Name');
+
+    const trigger = screen.getByRole('button', { name: 'Add step' });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    const command = await screen.findByRole('menuitem', { name: /^Send command/ });
+    await waitFor(() => expect(document.activeElement).toBe(command));
+    fireEvent.keyDown(command, { key: 'Enter' });
+
+    expect(await screen.findByLabelText('Command')).toBeTruthy();
 });
 
 test('edits an existing automation', async () => {

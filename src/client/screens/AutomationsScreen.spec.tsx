@@ -24,7 +24,11 @@ afterEach(() => {
     host?.dispose();
     host = undefined;
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
 });
+
+/** Pretends the window is narrower than Tailwind's lg breakpoint. */
+const narrow = () => vi.stubGlobal('matchMedia', (media: string) => ({ matches: false, media, addEventListener: () => {}, removeEventListener: () => {} }));
 
 const run = (changes: Partial<api.RunSummary>): api.RunSummary => ({
     id: 1,
@@ -101,6 +105,48 @@ test('lists automations with trigger, steps, runs and a progress bar while runni
     vi.mocked(api.runAutomation).mockResolvedValue({ automations: [], can_manage: true, can_run: true });
     fireEvent.click(within(screen.getByText('Nightly restart').closest('tr')!).getByRole('button', { name: 'Run now' }));
     await waitFor(() => expect(api.runAutomation).toHaveBeenCalledWith(expect.any(String), 1));
+});
+
+test('shows each automation as a card with all its actions on narrow screens', async () => {
+    narrow();
+    renderScreen(
+        {
+            automations: [
+                automation({}),
+                automation({ id: 2, name: 'Backup when empty', enabled: false, next_run_at: null, last_run: run({ id: 9, status: 'running', progress: { current: 1, total: 2, step: 'Wait', percent: 50, until: null } }) }),
+            ],
+            can_manage: true,
+            can_run: true,
+        },
+        ['ext.automations.read', 'ext.automations.manage', 'ext.automations.run']
+    );
+
+    const card = (await screen.findByText('Nightly restart')).closest('li')!;
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(within(card).getByText('Every day at 04:00 · Europe/Berlin · 3 steps')).toBeTruthy();
+    expect(within(card).getByText('Next run')).toBeTruthy();
+    expect(within(card).getByText('Succeeded')).toBeTruthy();
+    expect(within(card).getByText('3 hours ago')).toBeTruthy();
+    expect(within(card).getByRole('switch', { name: 'Nightly restart enabled' }).getAttribute('aria-checked')).toBe('true');
+    for (const action of ['Run now', 'Edit', 'History', 'Delete']) {
+        expect(within(card).getByRole('button', { name: action })).toBeTruthy();
+    }
+
+    const running = screen.getByText('Backup when empty').closest('li')!;
+    expect(within(running).getByText('Paused')).toBeTruthy();
+    expect(within(running).getByRole('progressbar')).toBeTruthy();
+    expect(within(running).getByRole('button', { name: 'Cancel' })).toBeTruthy();
+
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit' }));
+    expect(navigate).toHaveBeenCalledWith({ extension: 'automations', screen: 'editor', params: { id: expect.any(String), automationId: '1' } });
+});
+
+test('offers the first automation on narrow screens too', async () => {
+    narrow();
+    renderScreen({ automations: [], can_manage: true }, ['ext.automations.read', 'ext.automations.manage']);
+
+    expect(await screen.findByText('No automations')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /New automation/ })).toBeTruthy();
 });
 
 test('is read only with only the read permission', async () => {

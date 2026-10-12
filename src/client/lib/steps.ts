@@ -2,15 +2,15 @@ import type { Condition, Step, StepType } from '../api';
 
 export const MAX_DEPTH = 3;
 
-export const STEP_TYPES: { type: StepType; label: string; icon: string }[] = [
-    { type: 'command', label: 'Send command', icon: 'square-terminal' },
-    { type: 'power', label: 'Power action', icon: 'power' },
-    { type: 'backup', label: 'Create backup', icon: 'archive' },
-    { type: 'wait', label: 'Wait', icon: 'hourglass' },
-    { type: 'wait_for', label: 'Wait for state', icon: 'timer' },
-    { type: 'countdown', label: 'Countdown', icon: 'alarm-clock' },
-    { type: 'if', label: 'If / else', icon: 'split' },
-    { type: 'webhook', label: 'Notify', icon: 'webhook' },
+export const STEP_TYPES: { type: StepType; label: string; icon: string; description: string }[] = [
+    { type: 'command', label: 'Send command', icon: 'square-terminal', description: 'Runs a console command.' },
+    { type: 'power', label: 'Power action', icon: 'power', description: 'Starts, stops, restarts or kills the server.' },
+    { type: 'backup', label: 'Create backup', icon: 'archive', description: 'Starts a backup and can wait for it.' },
+    { type: 'wait', label: 'Wait', icon: 'hourglass', description: 'Pauses for a set time.' },
+    { type: 'wait_for', label: 'Wait for state', icon: 'timer', description: 'Waits until the server is running or offline.' },
+    { type: 'countdown', label: 'Countdown', icon: 'alarm-clock', description: 'Announces the time left, then goes on.' },
+    { type: 'if', label: 'If / else', icon: 'split', description: 'Runs other steps based on a condition.' },
+    { type: 'webhook', label: 'Notify', icon: 'webhook', description: 'Sends a Discord or webhook message.' },
 ];
 
 export const COUNTDOWN_POINTS = [3600, 1800, 900, 600, 300, 180, 120, 60, 30, 15, 10, 5, 3, 2, 1];

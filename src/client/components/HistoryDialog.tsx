@@ -37,7 +37,7 @@ export default function HistoryDialog({ server, automation, onClose }: Props) {
             ) : runs.data.length === 0 ? (
                 <p className='auto:text-sm auto:text-muted-foreground'>This automation has not run yet.</p>
             ) : (
-                <ul className='auto:grid auto:max-h-[60vh] auto:gap-2 auto:overflow-y-auto'>
+                <ul className='auto:grid auto:max-h-[60vh] auto:grid-cols-1 auto:gap-2 auto:overflow-y-auto'>
                     {runs.data.map((run) => (
                         <li key={run.id} className='auto:rounded-sm auto:bg-sunken auto:px-3 auto:py-2'>
                             <div className='auto:flex auto:flex-wrap auto:items-center auto:gap-x-3 auto:gap-y-1'>
@@ -56,7 +56,7 @@ export default function HistoryDialog({ server, automation, onClose }: Props) {
                                     </Button.Text>
                                 )}
                             </div>
-                            {run.message && <p className='auto:mt-1 auto:text-xs auto:text-muted-foreground'>{run.message}</p>}
+                            {run.message && <p className='auto:mt-1 auto:break-words auto:text-xs auto:text-muted-foreground'>{run.message}</p>}
                             {run.progress && <RunProgress progress={run.progress} />}
                             {open === run.id && (
                                 <ol className='auto:mt-2 auto:grid auto:gap-1 auto:border-t auto:border-border auto:pt-2'>
