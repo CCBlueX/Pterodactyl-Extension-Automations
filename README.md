@@ -20,6 +20,7 @@ Schedules that do more: restart with a countdown, only when nobody is online, th
 - **Steps**: console commands, power actions, backups, waits, "wait until running or offline", countdowns and Discord or webhook messages.
 - **Conditions**: if/else on the server state, CPU or memory usage, or the number of players online (Minecraft).
 - **Triggers in your time zone**: every few minutes, daily or on chosen weekdays, with a preview of the next runs.
+- **Pause until a date**: skip scheduled runs over a holiday or event; they resume on their own.
 - **Live progress and history**: see which step is running, cancel a run, and read a log of every step.
 - **Safe**: steps need the same permissions as doing it by hand, and webhooks cannot reach private networks.
 

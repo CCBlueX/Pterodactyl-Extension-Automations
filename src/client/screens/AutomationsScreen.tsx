@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+    Badge,
     Button,
     Dialog,
     Empty,
@@ -11,6 +12,7 @@ import {
     EmptyTitle,
     NamedIcon,
     ServerContentBlock,
+    ServerError,
     Spinner,
     Switch,
     Table,
@@ -19,9 +21,10 @@ import {
     useCurrentServerRequired,
     usePanelNavigate,
 } from '@pterodactyl/sdk';
-import { cancelAutomation, deleteAutomation, getAutomations, isActive, keys, runAutomation, setEnabled, type Automation, type AutomationList } from '../api';
+import { cancelAutomation, deleteAutomation, getAutomations, isActive, keys, pauseAutomation, runAutomation, setEnabled, type Automation, type AutomationList } from '../api';
 import AutomationCard from '../components/AutomationCard';
 import HistoryDialog from '../components/HistoryDialog';
+import PauseDialog from '../components/PauseDialog';
 import RunProgress from '../components/RunProgress';
 import StatusPill from '../components/StatusPill';
 import { formatAgo, formatWhen, plural } from '../lib/format';
@@ -39,12 +42,18 @@ export default function AutomationsScreen() {
     });
     const [deleting, setDeleting] = useState<Automation | null>(null);
     const [history, setHistory] = useState<Automation | null>(null);
+    const [pausing, setPausing] = useState<Automation | null>(null);
     const update = (result: AutomationList) => queryClient.setQueryData(keys.list(identifier), result);
     const onError = (error: unknown) => toast.error(httpErrorToHuman(error));
 
     const toggling = useMutation({ mutationFn: ({ automation, enabled }: { automation: Automation; enabled: boolean }) => setEnabled(identifier, automation.id, enabled), onSuccess: update, onError });
     const running = useMutation({ mutationFn: (automation: Automation) => runAutomation(identifier, automation.id), onSuccess: (result, automation) => (update(result), toast.success(`${automation.name} started.`)), onError });
     const cancelling = useMutation({ mutationFn: (automation: Automation) => cancelAutomation(identifier, automation.id), onSuccess: update, onError });
+    const pause = useMutation({
+        mutationFn: ({ automation, until, timezone }: { automation: Automation; until: string | null; timezone: string }) => pauseAutomation(identifier, automation.id, until, timezone),
+        onSuccess: (result) => (update(result), setPausing(null)),
+        onError,
+    });
     const removal = useMutation({ mutationFn: (automation: Automation) => deleteAutomation(identifier, automation.id), onSuccess: (result) => (update(result), setDeleting(null)), onError });
 
     const edit = (automation: Automation | 'new') => navigate({ extension: 'automations', screen: 'editor', params: { id: identifier, automationId: automation === 'new' ? 'new' : String(automation.id) } });
@@ -59,7 +68,11 @@ export default function AutomationsScreen() {
     if (!data) {
         return (
             <ServerContentBlock title='Automations'>
-                {list.isError ? <p className='auto:text-sm auto:text-destructive'>{httpErrorToHuman(list.error)}</p> : <Spinner size={Spinner.Size.LARGE} centered />}
+                {list.isError ? (
+                    <ServerError title='Could not load automations' message={httpErrorToHuman(list.error)} onRetry={() => list.refetch()} />
+                ) : (
+                    <Spinner size={Spinner.Size.LARGE} centered />
+                )}
             </ServerContentBlock>
         );
     }
@@ -84,6 +97,12 @@ export default function AutomationsScreen() {
         ) : (
             <span className='auto:text-xs auto:text-muted-foreground'>Paused</span>
         );
+    const pausedBadge = (automation: Automation) =>
+        automation.paused_until && (
+            <Badge tone='warning' size='sm' title={formatAgo(automation.paused_until)}>
+                Paused until {formatWhen(automation.paused_until)}
+            </Badge>
+        );
     const lastRun = (automation: Automation) =>
         automation.last_run ? (
             <span className='auto:flex auto:flex-wrap auto:items-center auto:gap-2' title={automation.last_run.message ?? undefined}>
@@ -107,6 +126,16 @@ export default function AutomationsScreen() {
                     <Button size='xsmall' disabled={running.isPending} onClick={() => running.mutate(automation)}>
                         Run now
                     </Button>
+                ))}
+            {data.can_manage &&
+                (automation.paused_until ? (
+                    <Button.Text size='xsmall' disabled={pause.isPending} onClick={() => pause.mutate({ automation, until: null, timezone: 'UTC' })}>
+                        Resume
+                    </Button.Text>
+                ) : (
+                    <Button.Text size='xsmall' onClick={() => setPausing(automation)}>
+                        Pause until...
+                    </Button.Text>
                 ))}
             {data.can_manage && (
                 <Button.Text size='xsmall' onClick={() => edit(automation)}>
@@ -142,7 +171,10 @@ export default function AutomationsScreen() {
                             label: 'Automation',
                             cell: (automation) => (
                                 <div className='auto:min-w-48'>
-                                    <p className='auto:font-medium auto:text-foreground'>{automation.name}</p>
+                                    <p className='auto:flex auto:flex-wrap auto:items-center auto:gap-2 auto:font-medium auto:text-foreground'>
+                                        {automation.name}
+                                        {pausedBadge(automation)}
+                                    </p>
                                     <p className='auto:mt-0.5 auto:text-xs auto:text-muted-foreground'>
                                         {automation.summary} · {automation.trigger.timezone}
                                     </p>
@@ -165,6 +197,7 @@ export default function AutomationsScreen() {
                         <AutomationCard
                             key={automation.id}
                             automation={automation}
+                            paused={pausedBadge(automation)}
                             next={nextRun(automation)}
                             last={lastRun(automation)}
                             enabled={enabledSwitch(automation)}
@@ -174,6 +207,7 @@ export default function AutomationsScreen() {
                 </ul>
             )}
             {history && <HistoryDialog server={identifier} automation={history} onClose={() => setHistory(null)} />}
+            {pausing && <PauseDialog automation={pausing} pending={pause.isPending} onClose={() => setPausing(null)} onPause={(until, timezone) => pause.mutate({ automation: pausing, until, timezone })} />}
             <Dialog.Confirm open={deleting !== null} onClose={() => setDeleting(null)} title={`Delete ${deleting?.name}?`} confirm='Delete' pending={removal.isPending} onConfirmed={() => deleting && removal.mutate(deleting)}>
                 Its history is deleted too. A run in progress stops.
             </Dialog.Confirm>

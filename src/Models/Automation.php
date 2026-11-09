@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Automations\Models;
 
+use Automations\Support\PauseUntil;
 use Automations\Support\Steps;
 use Automations\Support\Trigger;
 use Carbon\CarbonImmutable;
@@ -23,6 +24,7 @@ use Pterodactyl\Models\Server;
  * @property array<string, mixed> $trigger
  * @property list<array<string, mixed>> $steps
  * @property CarbonImmutable|null $next_run_at
+ * @property CarbonImmutable|null $paused_until
  * @property-read Server $server
  * @property-read Run|null $lastRun
  */
@@ -32,11 +34,11 @@ final class Automation extends Model
 
     protected $table = 'ext_automations_automations';
 
-    protected $fillable = ['server_id', 'name', 'enabled', 'skip_offline', 'trigger', 'steps', 'next_run_at'];
+    protected $fillable = ['server_id', 'name', 'enabled', 'skip_offline', 'trigger', 'steps', 'next_run_at', 'paused_until'];
 
     protected function casts(): array
     {
-        return ['enabled' => 'boolean', 'skip_offline' => 'boolean', 'trigger' => 'array', 'steps' => 'array', 'next_run_at' => 'immutable_datetime'];
+        return ['enabled' => 'boolean', 'skip_offline' => 'boolean', 'trigger' => 'array', 'steps' => 'array', 'next_run_at' => 'immutable_datetime', 'paused_until' => 'immutable_datetime'];
     }
 
     /** @return BelongsTo<Server, $this> */
@@ -57,6 +59,12 @@ final class Automation extends Model
         return $this->hasOne(Run::class)->latestOfMany();
     }
 
+    /** Whether this automation is paused until a future date. */
+    public function isPaused(?DateTimeInterface $now = null): bool
+    {
+        return $this->paused_until !== null && $this->paused_until->gt($now ?? CarbonImmutable::now());
+    }
+
     /** In the panel's time zone, because datetime columns store wall-clock time. */
     public function nextRun(?DateTimeInterface $after = null): ?CarbonImmutable
     {
@@ -75,7 +83,10 @@ final class Automation extends Model
             'summary' => Trigger::fromArray($this->trigger)->summary(),
             'steps' => $secrets ? $this->steps : Steps::redact($this->steps),
             'step_count' => Steps::count($this->steps),
-            'next_run_at' => $this->next_run_at?->toIso8601String(),
+            'next_run_at' => $this->isPaused() && $this->enabled
+                ? CarbonImmutable::instance(PauseUntil::firstRun(Trigger::fromArray($this->trigger), $this->paused_until, CarbonImmutable::now()))->toIso8601String()
+                : $this->next_run_at?->toIso8601String(),
+            'paused_until' => $this->isPaused() ? $this->paused_until->toIso8601String() : null,
             'last_run' => $this->lastRun?->present(),
         ];
     }

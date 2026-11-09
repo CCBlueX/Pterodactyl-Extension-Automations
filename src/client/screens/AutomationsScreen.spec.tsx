@@ -14,6 +14,7 @@ vi.mock('../api', async (importOriginal) => ({
     ...(await importOriginal<typeof import('../api')>()),
     getAutomations: vi.fn(),
     runAutomation: vi.fn(),
+    pauseAutomation: vi.fn(),
     getRuns: vi.fn(),
 }));
 
@@ -53,6 +54,7 @@ const automation = (changes: Partial<api.Automation>): api.Automation => ({
     steps: [],
     step_count: 3,
     next_run_at: new Date(Date.now() + 3600_000).toISOString(),
+    paused_until: null,
     last_run: run({}),
     ...changes,
 });
@@ -179,6 +181,25 @@ test('shows the per-step log in the history', async () => {
     expect(screen.getByText('2 › then 1. Send command')).toBeTruthy();
     expect(screen.getByText('Could not announce 10 minutes: offline')).toBeTruthy();
     expect(screen.getByText('Scheduled · took 1 min')).toBeTruthy();
+});
+
+test('pauses an automation until a date and resumes it', async () => {
+    const until = new Date(Date.now() + 2 * 86400_000).toISOString();
+    const list = { automations: [automation({}), automation({ id: 2, name: 'Backup when empty', paused_until: until })], can_manage: true, can_run: false };
+    vi.mocked(api.pauseAutomation).mockResolvedValue(list);
+    renderScreen(list, ['ext.automations.read', 'ext.automations.manage']);
+
+    const paused = (await screen.findByText('Backup when empty')).closest('tr')!;
+    expect(within(paused).getByText(/^Paused until /)).toBeTruthy();
+    expect(within(screen.getByText('Nightly restart').closest('tr')!).queryByText(/^Paused until /)).toBeNull();
+
+    fireEvent.click(within(paused).getByRole('button', { name: 'Resume' }));
+    await waitFor(() => expect(api.pauseAutomation).toHaveBeenCalledWith(expect.any(String), 2, null, expect.any(String)));
+
+    fireEvent.click(within(screen.getByText('Nightly restart').closest('tr')!).getByRole('button', { name: 'Pause until...' }));
+    fireEvent.change(await screen.findByLabelText('Pause until'), { target: { value: '2030-01-02T08:00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
+    await waitFor(() => expect(api.pauseAutomation).toHaveBeenCalledWith(expect.any(String), 1, '2030-01-02T08:00', expect.any(String)));
 });
 
 test('offers the first automation when there is none', async () => {

@@ -1,10 +1,11 @@
-import type { LucideIcon, LucideProps } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import { DropdownMenu, NamedIcon } from '@pterodactyl/sdk';
 import type { StepType } from '../api';
 import { STEP_TYPES } from '../lib/steps';
 
 // The menu items take icon components, so each step's icon name gets a small wrapper.
-const ICONS = new Map(STEP_TYPES.map((entry) => [entry.type, ((props: LucideProps) => <NamedIcon name={entry.icon} {...props} />) as unknown as LucideIcon]));
+type ItemIcon = NonNullable<ComponentProps<typeof DropdownMenu.Item>['icon']>;
+const ICONS = new Map(STEP_TYPES.map((entry) => [entry.type, ((props: Omit<ComponentProps<typeof NamedIcon>, 'name'>) => <NamedIcon name={entry.icon} {...props} />) as unknown as ItemIcon]));
 
 interface Props {
     types: StepType[];

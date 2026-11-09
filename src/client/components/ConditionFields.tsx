@@ -34,7 +34,7 @@ export default function ConditionFields({ id, condition, players, onChange }: Pr
                     <Select id={`${id}-state`} value={condition.state} options={STATES} onChange={(value) => onChange({ kind: 'state', state: value as StateName })} />
                 </div>
             ) : (
-                <div className='auto:grid auto:grid-cols-[7rem_minmax(0,1fr)] auto:gap-2'>
+                <div className='auto:grid auto:gap-2 auto:sm:grid-cols-[7rem_minmax(0,1fr)]'>
                     <div>
                         <Label htmlFor={`${id}-op`}>Is</Label>
                         <Select id={`${id}-op`} value={condition.op} options={COMPARISONS} onChange={(value) => onChange({ ...condition, op: value as Comparison })} />

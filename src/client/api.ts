@@ -70,6 +70,8 @@ export interface Automation {
     steps: Step[];
     step_count: number;
     next_run_at: string | null;
+    /** Set while scheduled runs are paused, until this moment. */
+    paused_until: string | null;
     last_run: RunSummary | null;
 }
 
@@ -106,6 +108,9 @@ export const getAutomations = async (id: string) => (await http.get<AutomationLi
 export const saveAutomation = async (id: string, input: AutomationInput, automation?: number) =>
     (automation ? await http.put<AutomationList>(`${base(id)}/automations/${automation}`, input) : await http.post<AutomationList>(`${base(id)}/automations`, input)).data;
 export const setEnabled = async (id: string, automation: number, enabled: boolean) => (await http.put<AutomationList>(`${base(id)}/automations/${automation}/enabled`, { enabled })).data;
+/** Pauses scheduled runs until a local date and time such as "2026-11-10T08:00", or resumes them with `null`. */
+export const pauseAutomation = async (id: string, automation: number, until: string | null, timezone: string) =>
+    (await http.put<AutomationList>(`${base(id)}/automations/${automation}/pause`, { until, timezone })).data;
 export const deleteAutomation = async (id: string, automation: number) => (await http.delete<AutomationList>(`${base(id)}/automations/${automation}`)).data;
 export const runAutomation = async (id: string, automation: number) => (await http.post<AutomationList>(`${base(id)}/automations/${automation}/run`)).data;
 export const cancelAutomation = async (id: string, automation: number) => (await http.post<AutomationList>(`${base(id)}/automations/${automation}/cancel`)).data;

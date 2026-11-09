@@ -59,7 +59,7 @@ function Editor({ server, automation, players }: EditorProps) {
                         <NamedIcon name='arrow-left' className='auto:h-3.5 auto:w-3.5' />
                         Automations
                     </PanelLink>
-                    <h2 className='auto:truncate auto:text-2xl auto:font-medium auto:text-foreground'>{automation ? automation.name : 'New automation'}</h2>
+                    <h2 className='auto:truncate auto:font-header auto:text-2xl auto:font-semibold auto:text-foreground'>{automation ? automation.name : 'New automation'}</h2>
                 </div>
             </div>
             <div className='auto:grid auto:gap-6 auto:lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]'>

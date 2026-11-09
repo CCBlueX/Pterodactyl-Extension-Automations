@@ -9,10 +9,13 @@ use Automations\Models\Automation;
 use Automations\Models\Run;
 use Automations\Panel\Panel;
 use Automations\Runner\Launcher;
+use Automations\Support\PauseUntil;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Pterodactyl\Models\Server;
 
 final readonly class AutomationController
@@ -64,6 +67,30 @@ final readonly class AutomationController
         $automation = $this->find($server, $id);
         $automation->enabled = (bool) $request->validate(['enabled' => ['required', 'boolean']])['enabled'];
         $automation->next_run_at = $automation->nextRun();
+        $automation->save();
+
+        return $this->index($request, $server);
+    }
+
+    public function pause(Request $request, Server $server, int $id): JsonResponse
+    {
+        $this->authorize($request, $server, 'manage');
+
+        $automation = $this->find($server, $id);
+
+        if ($request->input('until') === null) {
+            $automation->paused_until = null;
+        } else {
+            try {
+                $until = PauseUntil::parse($request->input('until'), $request->input('timezone'), CarbonImmutable::now());
+            } catch (InvalidArgumentException $exception) {
+                throw ValidationException::withMessages(['until' => $exception->getMessage()]);
+            }
+
+            // Datetime columns store the panel's wall-clock time.
+            $automation->paused_until = CarbonImmutable::instance($until)->setTimezone(config('app.timezone'));
+        }
+
         $automation->save();
 
         return $this->index($request, $server);

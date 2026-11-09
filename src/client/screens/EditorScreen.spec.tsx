@@ -42,6 +42,7 @@ const existing: api.Automation = {
     ],
     step_count: 2,
     next_run_at: null,
+    paused_until: null,
     last_run: null,
 };
 

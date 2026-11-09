@@ -38,7 +38,7 @@ final class TickCommand extends Command
                 try {
                     $automation->update(['next_run_at' => $automation->nextRun($now)]);
 
-                    if (! $late) {
+                    if (! $late && ! $automation->isPaused($now)) {
                         $launcher->start($automation, 'schedule');
                     }
                 } catch (Throwable $exception) {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Dialog, Spinner, httpErrorToHuman } from '@pterodactyl/sdk';
+import { Button, Dialog, Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle, NamedIcon, ServerError, Spinner, httpErrorToHuman } from '@pterodactyl/sdk';
 import { getRuns, isActive, keys, type Automation, type Run } from '../api';
 import { formatAgo, formatWhen } from '../lib/format';
 import RunProgress from './RunProgress';
@@ -33,9 +33,17 @@ export default function HistoryDialog({ server, automation, onClose }: Props) {
     return (
         <Dialog open onClose={onClose} title={`History of ${automation.name}`}>
             {!runs.data ? (
-                runs.isError ? <p className='auto:text-sm auto:text-destructive'>{httpErrorToHuman(runs.error)}</p> : <Spinner centered />
+                runs.isError ? <ServerError title='Could not load the history' message={httpErrorToHuman(runs.error)} onRetry={() => runs.refetch()} /> : <Spinner centered />
             ) : runs.data.length === 0 ? (
-                <p className='auto:text-sm auto:text-muted-foreground'>This automation has not run yet.</p>
+                <Empty size='compact'>
+                    <EmptyHeader>
+                        <EmptyMedia variant='icon'>
+                            <NamedIcon name='history' />
+                        </EmptyMedia>
+                        <EmptyTitle>No runs yet</EmptyTitle>
+                        <EmptyDescription>Runs show up here with each step they took.</EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
             ) : (
                 <ul className='auto:grid auto:max-h-[60vh] auto:grid-cols-1 auto:gap-2 auto:overflow-y-auto'>
                     {runs.data.map((run) => (

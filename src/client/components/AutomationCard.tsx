@@ -5,6 +5,7 @@ import RunProgress from './RunProgress';
 
 interface Props {
     automation: Automation;
+    paused: ReactNode;
     next: ReactNode;
     last: ReactNode;
     enabled: ReactNode;
@@ -19,12 +20,13 @@ const Detail = ({ label, children }: { label: string; children: ReactNode }) => 
 );
 
 /** One automation on narrow screens, where the table does not fit. */
-export default function AutomationCard({ automation, next, last, enabled, actions }: Props) {
+export default function AutomationCard({ automation, paused, next, last, enabled, actions }: Props) {
     return (
         <li className='auto:p-3'>
             <div className='auto:flex auto:items-start auto:justify-between auto:gap-3'>
                 <div className='auto:min-w-0'>
                     <p className='auto:break-words auto:font-medium auto:text-foreground'>{automation.name}</p>
+                    {paused && <div className='auto:mt-1'>{paused}</div>}
                     <p className='auto:mt-0.5 auto:text-xs auto:text-muted-foreground'>
                         {automation.summary} · {automation.trigger.timezone} · {plural(automation.step_count, 'step')}
                     </p>

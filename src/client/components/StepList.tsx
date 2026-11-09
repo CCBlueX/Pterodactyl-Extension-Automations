@@ -1,4 +1,4 @@
-import { Button, NamedIcon } from '@pterodactyl/sdk';
+import { Button, Empty, EmptyHeader, EmptyTitle, NamedIcon } from '@pterodactyl/sdk';
 import type { Step } from '../api';
 import { MAX_DEPTH, STEP_TYPES, move, newStep, removeAt, replaceAt, stepType } from '../lib/steps';
 import AddStepMenu from './AddStepMenu';
@@ -72,8 +72,14 @@ export default function StepList({ steps, onChange, players, parent = '', depth 
                     })}
                 </ol>
             )}
+            {steps.length === 0 && parent && (
+                <Empty size='compact' className='auto:mb-2'>
+                    <EmptyHeader>
+                        <EmptyTitle>No steps in this branch</EmptyTitle>
+                    </EmptyHeader>
+                </Empty>
+            )}
             <div className='auto:flex auto:flex-wrap auto:items-center auto:gap-2'>
-                {steps.length === 0 && parent && <span className='auto:text-xs auto:text-muted-foreground'>Nothing yet.</span>}
                 <AddStepMenu types={STEP_TYPES.map((entry) => entry.type).filter((type) => type !== 'if' || depth < MAX_DEPTH)} target={parent || undefined} onAdd={(type) => onChange([...steps, newStep(type)])} />
             </div>
         </div>
